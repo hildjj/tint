@@ -1,0 +1,75 @@
+#!/usr/bin/env node
+
+'use strict';
+const bb = require('bluebird');
+const utils = require('../src/utils');
+const Case = require('../src/case');
+const log = require('winston').cli();
+const argv = require('yargs')
+    .usage('Usage: $0')
+    .options({
+      verbose: {
+        alias: 'v',
+        type: 'count',
+        describe: 'Verbose output'
+      },
+      quiet: {
+        alias: 'q',
+        type: 'count',
+        describe: 'Quiet output'
+      },
+      client: {
+        alias: 'c',
+        type: 'string',
+        demand: true,
+        describe: 'The shim to use as the client'
+      },
+      server: {
+        alias: 's',
+        type: 'string',
+        demand: true,
+        describe: 'The shim to use as the server'
+      },
+      dir: {
+        alias: 'd',
+        type: 'string',
+        default: '.',
+        describe: 'The path where the working files are'
+      },
+      cases: {
+        alias: 'f',
+        type: 'string',
+        demand: true,
+        describe: 'The file containing the test cases'
+      }
+    })
+    .version()
+    .help('help')
+    .alias('help', 'h')
+    .strict()
+    .env('TINT_')
+    .argv;
+
+// Configure logger
+let lvl = 2 + argv.verbose - argv.quiet;
+if (lvl < 0) {
+  lvl = 0;
+} else if (lvl >= log.levels.length) {
+  lvl = log.levels.length - 1;
+}
+log.level = Object.keys(log.levels)[lvl];
+// log.default.transports.console.timestamp = true;
+
+utils.readJSON(argv.cases).then((cases) => {
+  if (!cases || !cases.cases) {
+    throw new TypeError('Invalid cases');
+  }
+  return bb.mapSeries(cases.cases, (c) => {
+    const cs = new Case(argv, c);
+    log.verbose(cs);
+  });
+}).then((cases) => {
+  log.info('Success');
+}).catch((er) => {
+  log.error(er.message || er);
+});

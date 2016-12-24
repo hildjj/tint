@@ -10,22 +10,6 @@ exports.readJSON = function(file) {
   });
 };
 
-/// Extract just the given fields from an object.
-/// Deals with invald objects and fields by returning an empty object.
-exports.filter = function(obj, fields) {
-  const res = {};
-  if (obj && (typeof(obj) === 'object') && Array.isArray(fields)) {
-    for (const f of fields) {
-      if (obj.hasOwnProperty(f)) {
-        res[f] = obj[f];
-      }
-    }
-  }
-  return res;
-};
-
-exports.Configurable = class Configurable {
-  constructor(opts, fields) {
-    Object.assign(this, exports.filter(opts, fields));
-  }
+exports.required = function(name) {
+  throw new Error(`parameter "${name}" required`);
 };
